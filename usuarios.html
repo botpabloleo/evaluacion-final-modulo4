@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administrador de Usuarios</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Courier New', monospace;
+    background: #0d0d0d;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  header {
+    border-bottom: 1px solid #2a2a2a;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  header h1 {
+    font-size: 1.4rem;
+    font-weight: normal;
+    letter-spacing: 0.15em;
+    color: #fff;
+    text-transform: uppercase;
+  }
+
+  header p {
+    font-size: 0.75rem;
+    color: #555;
+    margin-top: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+
+  #status {
+    font-size: 0.75rem;
+    color: #4caf50;
+    margin-top: 0.6rem;
+    letter-spacing: 0.05em;
+  }
+
+  #status.error { color: #f44336; }
+  #status.loading { color: #888; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  button {
+    background: #111;
+    border: 1px solid #2a2a2a;
+    color: #ccc;
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    line-height: 1.4;
+  }
+
+  button:hover {
+    border-color: #4caf50;
+    color: #4caf50;
+    background: #0d1a0d;
+  }
+
+  button:active {
+    background: #0a150a;
+  }
+
+  button .btn-num {
+    display: block;
+    color: #333;
+    font-size: 0.65rem;
+    margin-bottom: 0.3rem;
+  }
+
+  #output {
+    background: #111;
+    border: 1px solid #2a2a2a;
+    padding: 1.5rem;
+    min-height: 200px;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    color: #ccc;
+  }
+
+  #output .label {
+    color: #4caf50;
+    font-weight: bold;
+  }
+
+  #output .sep {
+    color: #333;
+  }
+
+  #output .title {
+    color: #fff;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #222;
+    padding-bottom: 0.4rem;
+  }
+
+  #output .item {
+    margin-bottom: 0.2rem;
+  }
+
+  #output .block {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  #output .block:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>// Administrador de Usuarios</h1>
+  <p>jsonplaceholder.typicode.com/users</p>
+  <div id="status" class="loading">Cargando datos...</div>
+</header>
+
+<div class="grid">
+  <button onclick="mgr.listarNombres()">
+    <span class="btn-num">01</span>Listar nombres de usuarios
+  </button>
+  <button onclick="mgr.buscarInfoBasica()">
+    <span class="btn-num">02</span>Info básica de usuario (username + email)
+  </button>
+  <button onclick="mgr.buscarDireccion()">
+    <span class="btn-num">03</span>Dirección de usuario
+  </button>
+  <button onclick="mgr.buscarInfoAvanzada()">
+    <span class="btn-num">04</span>Info avanzada (tel, web, empresa)
+  </button>
+  <button onclick="mgr.listarEmpresas()">
+    <span class="btn-num">05</span>Listar empresas y catchphrase
+  </button>
+  <button onclick="mgr.listarNombresOrdenados()">
+    <span class="btn-num">06</span>Nombres ordenados alfabéticamente
+  </button>
+</div>
+
+<div id="output"><span style="color:#333">// La salida aparecerá aquí</span></div>
+
+<script>
+class UserManager {
+  constructor() {
+    this._usuarios = [];
+    this._output = document.getElementById('output');
+    this._status = document.getElementById('status');
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', 'https://jsonplaceholder.typicode.com/users', true);
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        this._usuarios = JSON.parse(xhr.responseText);
+        this._status.textContent = `✓ ${this._usuarios.length} usuarios cargados`;
+        this._status.className = '';
+      } else {
+        this._status.textContent = `✗ Error HTTP ${xhr.status}`;
+        this._status.className = 'error';
+      }
+    };
+    xhr.onerror = () => {
+      this._status.textContent = '✗ Error de red';
+      this._status.className = 'error';
+    };
+    xhr.send();
+  }
+
+  _render(html) {
+    this._output.innerHTML = html;
+  }
+
+  _buscarUsuario(campo) {
+    const nombre = prompt('Ingresa el nombre del usuario:');
+    if (!nombre) return null;
+    const u = this._usuarios.find(u =>
+      u.name.toLowerCase() === nombre.toLowerCase()
+    );
+    if (!u) {
+      this._render(`<span style="color:#f44336">✗ Usuario "${nombre}" no encontrado.</span>\n<span style="color:#555">Nombres disponibles: ${this._usuarios.map(u => u.name).join(', ')}</span>`);
+      return null;
+    }
+    return u;
+  }
+
+  listarNombres() {
+    const items = this._usuarios
+      .map((u, i) => `<div class="item"><span class="label">${String(i+1).padStart(2,'0')}</span>  ${u.name}</div>`)
+      .join('');
+    this._render(`<span class="title">Usuarios</span>${items}`);
+  }
+
+  buscarInfoBasica() {
+    const u = this._buscarUsuario();
+    if (!u) return;
+    this._render(
+      `<span class="title">Info básica — ${u.name}</span>` +
+      `<div class="item"><span class="label">username</span>  ${u.username}</div>` +
+      `<div class="item"><span class="label">email   </span>  ${u.email}</div>`
+    );
+    console.log('Info básica:', { username: u.username, email: u.email });
+  }
+
+  buscarDireccion() {
+    const u = this._buscarUsuario();
+    if (!u) return;
+    const d = u.address;
+    this._render(
+      `<span class="title">Dirección — ${u.name}</span>` +
+      `<div class="item"><span class="label">street  </span>  ${d.street}</div>` +
+      `<div class="item"><span class="label">suite   </span>  ${d.suite}</div>` +
+      `<div class="item"><span class="label">city    </span>  ${d.city}</div>` +
+      `<div class="item"><span class="label">zipcode </span>  ${d.zipcode}</div>` +
+      `<div class="item"><span class="label">geo.lat </span>  ${d.geo.lat}</div>` +
+      `<div class="item"><span class="label">geo.lng </span>  ${d.geo.lng}</div>`
+    );
+    console.log('Dirección:', d);
+  }
+
+  buscarInfoAvanzada() {
+    const u = this._buscarUsuario();
+    if (!u) return;
+    const c = u.company;
+    this._render(
+      `<span class="title">Info avanzada — ${u.name}</span>` +
+      `<div class="item"><span class="label">teléfono    </span>  ${u.phone}</div>` +
+      `<div class="item"><span class="label">sitio web   </span>  ${u.website}</div>` +
+      `<div class="sep">─────────────────────</div>` +
+      `<div class="item"><span class="label">company     </span>  ${c.name}</div>` +
+      `<div class="item"><span class="label">catchphrase </span>  ${c.catchPhrase}</div>` +
+      `<div class="item"><span class="label">bs          </span>  ${c.bs}</div>`
+    );
+    console.log('Info avanzada:', { phone: u.phone, website: u.website, company: c });
+  }
+
+  listarEmpresas() {
+    const items = this._usuarios.map(u =>
+      `<div class="block">` +
+      `<div class="item"><span class="label">empresa     </span>  ${u.company.name}</div>` +
+      `<div class="item"><span class="label">catchphrase </span>  ${u.company.catchPhrase}</div>` +
+      `</div>`
+    ).join('');
+    this._render(`<span class="title">Empresas</span>${items}`);
+  }
+
+  listarNombresOrdenados() {
+    const ordenados = [...this._usuarios]
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const items = ordenados
+      .map((u, i) => `<div class="item"><span class="label">${String(i+1).padStart(2,'0')}</span>  ${u.name}</div>`)
+      .join('');
+    this._render(`<span class="title">Usuarios (A → Z)</span>${items}`);
+  }
+}
+
+const mgr = new UserManager();
+</script>
+</body>
+</html>
