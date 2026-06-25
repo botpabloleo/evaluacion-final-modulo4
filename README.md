@@ -11,7 +11,3 @@ Aplicación web que consume el endpoint `https://jsonplaceholder.typicode.com/us
 ## Autor
 
 Pablo León
-
-## URL del repositorio
-
-https://github.com/botpabloleo/evaluacion-final-modulo4
